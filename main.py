@@ -34,7 +34,7 @@ player_velocity = 0
 gravity = 0.5
 jump_strength = -10
 on_ground = False
-lives = 3
+lives = 8
 font = pygame.font.Font(None, 36)
 
 # Переменные для препятствий
