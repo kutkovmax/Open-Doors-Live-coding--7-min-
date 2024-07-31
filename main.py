@@ -77,7 +77,7 @@ while True:
         player.x = 0
     if player.x > WIDTH - player.width:
         player.x = WIDTH - player.width
-    if player.y > HEIGHT:
+    if player.y > HEIGHT - player.height:
         player.y = HEIGHT - player.height
         player_velocity = 0
         on_ground = True
