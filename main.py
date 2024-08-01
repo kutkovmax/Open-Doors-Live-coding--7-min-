@@ -17,12 +17,12 @@ BLACK = (0, 0, 0)
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Dora Jump")
 clock = pygame.time.Clock()
-bg = pygame.image.load("background.png")
+bg = pygame.image.load("images\\background7.png")
 
 
 class Dora(pygame.sprite.Sprite):
 
-    def __init__(self, x = WIDTH // 2, y = 0, speed = 5, xSize = 50, ySize = 50):
+    def __init__(self, x = WIDTH // 2, y = HEIGHT - 200, speed = 5, xSize = 75, ySize = 45):
 
         self.speed = speed
         self.lives = 8
@@ -37,7 +37,7 @@ class Dora(pygame.sprite.Sprite):
         self.height = ySize
 
         pygame.sprite.Sprite.__init__(self)
-        self.image = pygame.image.load('RoboDog.png').convert_alpha()
+        self.image = pygame.image.load('images\\dora.svg').convert_alpha()
         self.image = pygame.transform.scale(self.image, (xSize, ySize))  # Изменение размера робособаки
         self.rect = self.image.get_rect(midbottom=(x, y))
 
@@ -54,9 +54,9 @@ class Dora(pygame.sprite.Sprite):
                     self.y = plane.y - self.height
                     self.velocity_y = 0
                     self.on_ground = True
-                else:
-                    self.y -= self.velocity_y
-                    self.velocity_y  = 0
+                # else:
+                #     self.y -= self.velocity_y
+                #     self.velocity_y  = 0
 
         # Управление игроком
         keys = pygame.key.get_pressed()
@@ -81,6 +81,12 @@ class Dora(pygame.sprite.Sprite):
             print("Game Over!")
             pygame.quit()
             sys.exit()
+        global dY
+        if self.y <= HEIGHT // 2:
+            self.y = HEIGHT // 2
+            dY = self.velocity_y
+        else:
+            dY = 0
         self.rect.x = self.x
         self.rect.y = self.y
         screen.blit(self.image, self.rect.topleft)
@@ -88,7 +94,7 @@ class Dora(pygame.sprite.Sprite):
 class Plane(pygame.sprite.Sprite):
     def __init__(self, x = 0, y = 0, xSize = 83, ySize = 25):
         pygame.sprite.Sprite.__init__(self)
-        self.image = pygame.image.load('plane.png')
+        self.image = pygame.image.load('images\\plane.png')
         self.image = pygame.transform.scale(self.image, (xSize, ySize))  # Изменение размера самолета
         self.height = self.image.get_height()
         self.width = self.image.get_width()
@@ -96,13 +102,23 @@ class Plane(pygame.sprite.Sprite):
         self.x = x
         self.y = y
     def update(self):
+        self.y -= round(dY)
+        if self.y > HEIGHT:
+            self.y -=  HEIGHT * 2
+        self.rect.x = self.x
+        self.rect.y = self.y
         screen.blit(self.image, self.rect.topleft)
 
 planes = pygame.sprite.Group()    
-planes.add(Plane(0, 200))
-planes.add(Plane(WIDTH // 2, HEIGHT - 200))
-planes.add(Plane(WIDTH // 4, HEIGHT - 350))
+planes.add(Plane(WIDTH//2, HEIGHT - 100))
+planes.add(Plane(WIDTH - 83, HEIGHT - 100))
+for i in range(2, 14):
+    planes.add(Plane(random.randint(0, WIDTH - 83), HEIGHT - i * 100))
 
+
+
+
+dY = 0
 
 font = pygame.font.Font(None, 36)
 
@@ -125,8 +141,8 @@ while True:
     # Отрисовка фона
     screen.blit(bg, (0, 0))
 
-    all_sprites.update()
     planes.update()
+    all_sprites.update()
 
     pygame.display.flip()
     clock.tick(FPS)
