@@ -15,8 +15,9 @@ BLACK = (0, 0, 0)
 
 # Настройка окна
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("2D Платформер")
+pygame.display.set_caption("Dora Jump")
 clock = pygame.time.Clock()
+bg = pygame.image.load("background.png")
 
 
 class Dora(pygame.sprite.Sprite):
@@ -27,8 +28,8 @@ class Dora(pygame.sprite.Sprite):
         self.lives = 8
         self.max_lives = 8
         self.velocity_y = 0
-        self.gravity = 0.5
-        self.jump_strength = -10
+        self.gravity = 0.35
+        self.jump_strength = -12
         self.on_ground = False
         self.x = x
         self.y = y
@@ -59,11 +60,11 @@ class Dora(pygame.sprite.Sprite):
 
         # Управление игроком
         keys = pygame.key.get_pressed()
-        if keys[pygame.K_LEFT]:
+        if keys[pygame.K_LEFT] or keys[pygame.K_a]:
             self.x -= self.speed
-        if keys[pygame.K_RIGHT]:
+        if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
             self.x += self.speed
-        if keys[pygame.K_SPACE] and self.on_ground:
+        if self.on_ground:
             self.velocity_y = self.jump_strength
             self.on_ground = False
 
@@ -109,7 +110,7 @@ all_sprites = pygame.sprite.Group()
 dora = Dora()
 all_sprites.add(dora)
 
-
+screen.blit(bg, (0, 0))
 # Игровой цикл
 while True:
     # Обработка событий
@@ -122,11 +123,8 @@ while True:
             
 
     # Отрисовка фона
-    screen.fill(WHITE)
+    screen.blit(bg, (0, 0))
 
-    # Отображение жизней
-    lives_text = font.render(f"Lives: {dora.lives}", True, BLACK)
-    screen.blit(lives_text, (WIDTH - 120, 10))
     all_sprites.update()
     planes.update()
 
