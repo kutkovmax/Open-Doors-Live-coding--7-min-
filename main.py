@@ -6,7 +6,7 @@ import random
 pygame.init()
 
 # Константы
-WIDTH, HEIGHT = 800, 600
+WIDTH, HEIGHT = 480, 640
 FPS = 60
 
 # Цвета
@@ -18,29 +18,97 @@ screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("2D Платформер")
 clock = pygame.time.Clock()
 
-# Загрузка изображений
-player_image = pygame.image.load('RoboDog.png')
-player_image = pygame.transform.scale(player_image, (50, 50))  # Изменение размера робособаки
-player = player_image.get_rect(midbottom=(WIDTH // 2, HEIGHT - 20))
 
-plane_image = pygame.image.load('plane.png')
-plane_image = pygame.transform.scale(plane_image, (200, 50))  # Изменение размера самолета
-planes = [plane_image.get_rect(topleft=(0, HEIGHT - 70)),
-          plane_image.get_rect(topleft=(WIDTH // 2 - 100, HEIGHT - 200)),
-          plane_image.get_rect(topleft=(WIDTH // 4, HEIGHT - 350))]
+class Dora(pygame.sprite.Sprite):
 
-# Переменные игрока
-player_velocity = 0
-gravity = 0.5
-jump_strength = -10
-on_ground = False
-lives = 8
+    def __init__(self, x = WIDTH // 2, y = 0, speed = 5, xSize = 50, ySize = 50):
+
+        self.speed = speed
+        self.lives = 8
+        self.max_lives = 8
+        self.velocity_y = 0
+        self.gravity = 0.5
+        self.jump_strength = -10
+        self.on_ground = False
+        self.x = x
+        self.y = y
+        self.width = xSize
+        self.height = ySize
+
+        pygame.sprite.Sprite.__init__(self)
+        self.image = pygame.image.load('RoboDog.png').convert_alpha()
+        self.image = pygame.transform.scale(self.image, (xSize, ySize))  # Изменение размера робособаки
+        self.rect = self.image.get_rect(midbottom=(x, y))
+
+        self.width = self.image.get_width()
+        self.height = self.image.get_height()
+
+    def update(self):
+        # Обработка столкновений с самолетами
+        self.on_ground = False
+        
+        for plane in planes:
+            if self.rect.colliderect(plane):
+                if self.velocity_y > 0:
+                    self.y = plane.y - self.height
+                    self.velocity_y = 0
+                    self.on_ground = True
+                else:
+                    self.y -= self.velocity_y
+                    self.velocity_y  = 0
+
+        # Управление игроком
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_LEFT]:
+            self.x -= self.speed
+        if keys[pygame.K_RIGHT]:
+            self.x += self.speed
+        if keys[pygame.K_SPACE] and self.on_ground:
+            self.velocity_y = self.jump_strength
+            self.on_ground = False
+
+        # Применение гравитации
+        self.velocity_y += self.gravity
+        self.y += self.velocity_y
+
+        # Ограничение движений игрока по границам экрана 
+        if self.x < 0:
+            self.x = 0
+        if self.x > WIDTH - self.width:
+            self.x = WIDTH - self.width
+        if self.y > HEIGHT - self.height: # выпадает за границы мира
+            print("Game Over!")
+            pygame.quit()
+            sys.exit()
+        self.rect.x = self.x
+        self.rect.y = self.y
+        screen.blit(self.image, self.rect.topleft)
+
+class Plane(pygame.sprite.Sprite):
+    def __init__(self, x = 0, y = 0, xSize = 83, ySize = 25):
+        pygame.sprite.Sprite.__init__(self)
+        self.image = pygame.image.load('plane.png')
+        self.image = pygame.transform.scale(self.image, (xSize, ySize))  # Изменение размера самолета
+        self.height = self.image.get_height()
+        self.width = self.image.get_width()
+        self.rect = self.image.get_rect(topleft=(x, y))
+        self.x = x
+        self.y = y
+    def update(self):
+        screen.blit(self.image, self.rect.topleft)
+
+planes = pygame.sprite.Group()    
+planes.add(Plane(0, 200))
+planes.add(Plane(WIDTH // 2, HEIGHT - 200))
+planes.add(Plane(WIDTH // 4, HEIGHT - 350))
+
+
 font = pygame.font.Font(None, 36)
 
-# Переменные для препятствий
-balls = []
-ball_speed = 5
-ball_spawn_rate = 30  # Каждые 30 кадров
+all_sprites = pygame.sprite.Group()
+dora = Dora()
+all_sprites.add(dora)
+
 
 # Игровой цикл
 while True:
@@ -50,69 +118,17 @@ while True:
             pygame.quit()
             sys.exit()
 
-    # Управление игроком
-    keys = pygame.key.get_pressed()
-    if keys[pygame.K_LEFT]:
-        player.x -= 5
-    if keys[pygame.K_RIGHT]:
-        player.x += 5
-    if keys[pygame.K_SPACE] and on_ground:
-        player_velocity = jump_strength
-        on_ground = False
 
-    # Применение гравитации
-    player_velocity += gravity
-    player.y += player_velocity
+            
 
-    # Обработка столкновений с самолетами
-    on_ground = False
-    for plane in planes:
-        if player.colliderect(plane) and player_velocity > 0:
-            player.y = plane.y - player.height
-            player_velocity = 0
-            on_ground = True
-
-    # Ограничение движений игрока по границам экрана
-    if player.x < 0:
-        player.x = 0
-    if player.x > WIDTH - player.width:
-        player.x = WIDTH - player.width
-    if player.y > HEIGHT - player.height:
-        player.y = HEIGHT - player.height
-        player_velocity = 0
-        on_ground = True
-
-    # Спавн черных шаров (препятствий)
-    if random.randint(1, ball_spawn_rate) == 1:
-        ball = pygame.Rect(random.randint(0, WIDTH - 30), 0, 30, 30)
-        balls.append(ball)
-
-    # Движение черных шаров
-    for ball in balls[:]:
-        ball.y += ball_speed
-        if ball.colliderect(player):
-            balls.remove(ball)
-            lives -= 1
-            if lives <= 0:
-                print("Game Over!")
-                pygame.quit()
-                sys.exit()
-        elif ball.y > HEIGHT:
-            balls.remove(ball)
-
-    # Отрисовка
+    # Отрисовка фона
     screen.fill(WHITE)
-    screen.blit(player_image, player.topleft)
-    for plane in planes:
-        screen.blit(plane_image, plane.topleft)
-
-    # Отрисовка черных шаров
-    for ball in balls:
-        pygame.draw.ellipse(screen, BLACK, ball)
 
     # Отображение жизней
-    lives_text = font.render(f"Lives: {lives}", True, BLACK)
+    lives_text = font.render(f"Lives: {dora.lives}", True, BLACK)
     screen.blit(lives_text, (WIDTH - 120, 10))
+    all_sprites.update()
+    planes.update()
 
     pygame.display.flip()
     clock.tick(FPS)
